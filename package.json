@@ -1,0 +1,24 @@
+{
+  "name": "shepwispr",
+  "version": "1.0.0",
+  "description": "ShepWispr - Design system powered by Specify",
+  "main": "index.js",
+  "scripts": {
+    "specify:extract": "cd specify && npm run extract",
+    "specify:build": "cd specify && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "design-tokens",
+    "design-system",
+    "specify"
+  ],
+  "author": "Golden Sheep AI",
+  "license": "ISC",
+  "devDependencies": {
+    "@specifyapp/cli": "^1.2.0",
+    "@specifyapp/sdk": "^1.2.1",
+    "dotenv": "^17.2.3",
+    "typescript": "^5.9.3"
+  }
+}
