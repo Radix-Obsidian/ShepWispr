@@ -20,6 +20,9 @@ specify/*.js.map
 *.swp
 *.swo
 
+# Agent folders (may contain credentials/tokens)
+.windsurf/
+
 # OS
 .DS_Store
 Thumbs.db

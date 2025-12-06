@@ -1,0 +1,236 @@
+openapi: 3.0.3
+info:
+  title: ShepWhisper Voice-to-Prompt API
+  description: Transform natural voice input into structured, safe, LLM-ready prompts
+  version: 1.0.0
+  contact:
+    name: Golden Sheep AI
+    
+servers:
+  - url: http://localhost:3001/v1
+    description: Local development
+  - url: https://api.shepwhisper.ai/v1
+    description: Production
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /voice-to-prompt:
+    post:
+      summary: Transform voice input to structured prompt
+      operationId: voiceToPrompt
+      description: |
+        Accepts audio from push-to-talk recording along with IDE context.
+        Returns raw transcription and structured prompt for user review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceToPromptRequest'
+      responses:
+        '200':
+          description: Successfully transformed voice to prompt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceToPromptSuccessResponse'
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceToPromptErrorResponse'
+              example:
+                success: false
+                error:
+                  code: INVALID_REQUEST
+                  message: Audio is required
+                  retryable: false
+        '422':
+          description: Processing error (transcription failed, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceToPromptErrorResponse'
+              example:
+                success: false
+                error:
+                  code: TRANSCRIPTION_FAILED
+                  message: Couldn't understand that. Try speaking more clearly.
+                  retryable: true
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceToPromptErrorResponse'
+              example:
+                success: false
+                error:
+                  code: RATE_LIMITED
+                  message: The AI is busy. Please wait a moment and try again.
+                  retryable: true
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceToPromptErrorResponse'
+
+components:
+  schemas:
+    VoiceToPromptRequest:
+      type: object
+      required:
+        - audio
+        - context
+      properties:
+        audio:
+          type: string
+          description: Base64 encoded audio buffer (max 2 minutes)
+          example: UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=
+        context:
+          $ref: '#/components/schemas/IDEContext'
+
+    IDEContext:
+      type: object
+      required:
+        - activeFile
+        - ideType
+      properties:
+        activeFile:
+          type: string
+          description: Full path to the currently active file
+          example: /Users/dev/project/src/components/Button.tsx
+        selectedCode:
+          type: string
+          description: Currently selected/highlighted code, if any
+          example: |
+            function handleClick() {
+              console.log('clicked');
+            }
+        cursorLine:
+          type: integer
+          description: Current cursor line number (1-indexed)
+          example: 42
+        ideType:
+          type: string
+          enum: [vscode, cursor, windsurf]
+          description: Which IDE extension is making the request
+
+    VoiceToPromptSuccessResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required:
+            - rawSpeech
+            - structuredPrompt
+            - intent
+            - confidence
+            - processingTimeMs
+          properties:
+            rawSpeech:
+              type: string
+              description: Original transcription from Whisper
+              example: Um so I want to like add a button that saves the user preferences
+            structuredPrompt:
+              type: string
+              description: Composed markdown prompt ready for LLM
+              example: |
+                ## Goal
+                Add a button that saves user preferences.
+
+                ## Context
+                Working in: /src/components/Button.tsx
+
+                ## Constraints
+                - Do not invent APIs that don't exist
+                - Explain any assumptions made
+                - Ask for clarification if requirements are unclear
+
+                ## Expected Output
+                Provide implementation code with explanation.
+            intent:
+              type: string
+              enum: [bug_fix, add_feature, explain_code, spec_generation]
+              description: Classified intent type
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: Overall confidence score
+              example: 0.92
+            processingTimeMs:
+              type: integer
+              description: Total pipeline processing time in milliseconds
+              example: 1847
+
+    VoiceToPromptErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - retryable
+          properties:
+            code:
+              type: string
+              enum:
+                - NETWORK_ERROR
+                - TRANSCRIPTION_FAILED
+                - RATE_LIMITED
+                - AUDIO_TOO_LONG
+                - AUDIO_EMPTY
+                - INVALID_REQUEST
+                - INTERNAL_ERROR
+              description: Machine-readable error code
+            message:
+              type: string
+              description: User-friendly error message (safe to display)
+              example: Couldn't connect. Check your internet and try again.
+            retryable:
+              type: boolean
+              description: Whether the client should retry the request
+              
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

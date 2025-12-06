@@ -1,126 +1,187 @@
-# ShepWispr
+# 🐑 ShepWhisper
 
-A design system project powered by Specify for design token management.
+> **"Transform messy voice into production-grade prompts."**
 
-## About Specify
+ShepWhisper is a voice-to-prompt transformation engine that helps non-technical founders interact with AI coding assistants using natural speech. Speak like a human, get prompts like an engineer.
 
-Specify is a design token management platform that helps you centralize, transform, and distribute design tokens from design tools like Figma to your codebase. It supports over 50 token types and provides a collaborative space for design and development teams.
+## ✨ What It Does
 
-## Project Structure
+1. **You speak** (push-to-talk in VS Code/Cursor/Windsurf)
+2. **ShepWhisper listens** and transcribes via Whisper API
+3. **Pipeline transforms** messy speech → structured, safe prompt
+4. **Review panel shows** raw speech + structured prompt side-by-side
+5. **You approve** → prompt sent to your chosen LLM
+
+**The magic**: Your voice `"um so like I want to add a button that saves the form"` becomes:
+
+```markdown
+## Goal
+Add a save button to the form
+
+## Context
+Working in: `/src/components/Form.tsx`
+
+## Constraints
+- Do NOT invent APIs that don't exist in the codebase
+- Follow existing code patterns
+- Ask for clarification if requirements are unclear
+```
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     VS Code Extension                        │
+│  ┌─────────┐  ┌──────────────┐  ┌────────────────────────┐  │
+│  │Recorder │→ │  API Client  │→ │    Review Panel        │  │
+│  │(Webview)│  │              │  │  Raw | Structured      │  │
+│  └─────────┘  └──────────────┘  │  [Send to Cursor]      │  │
+│                                  └────────────────────────┘  │
+└────────────────────────┬────────────────────────────────────┘
+                         │ POST /v1/voice-to-prompt
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Backend API                              │
+│  ┌─────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  ┌─────┐ │
+│  │ STT │→ │Normalizer│→ │Classifier│→ │ Schema  │→ │Comp-│ │
+│  │     │  │          │  │          │  │Selector │  │oser │ │
+│  └─────┘  └──────────┘  └──────────┘  └─────────┘  └─────┘ │
+│  Whisper   Filler       Intent        bug_fix     Markdown  │
+│   API      removal      detection     add_feature  prompt   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 20+
+- OpenAI API key (for Whisper)
+- VS Code, Cursor, or Windsurf
+
+### Backend Setup
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Add your OPENAI_API_KEY to .env
+npm run dev
+```
+
+### Extension Setup
+```bash
+cd extensions/vscode
+npm install
+npm run compile
+# Press F5 in VS Code to launch extension host
+```
+
+### Usage
+1. Open a file in VS Code
+2. Press `Ctrl+Shift+V` (or `Cmd+Shift+V` on Mac)
+3. Speak your request
+4. Release the key
+5. Review the structured prompt in the panel
+6. Click "Send to Cursor" (or your preferred LLM)
+
+## 📁 Project Structure
 
 ```
 ShepWispr/
-├── specify/              # Specify design token extraction
-│   ├── extract.ts       # Token extraction script
-│   ├── package.json     # Specify module configuration
-│   ├── tsconfig.json    # TypeScript configuration
-│   └── .env            # Environment variables (not tracked)
-├── package.json         # Main project configuration
-└── README.md           # This file
+├── backend/                    # Node.js + Express API
+│   ├── src/
+│   │   ├── api/               # Routes & middleware
+│   │   ├── engine/            # Pipeline components
+│   │   │   ├── stt/           # Speech-to-text (Whisper)
+│   │   │   ├── normalizer/    # Filler word removal
+│   │   │   ├── intent/        # Intent classification
+│   │   │   ├── schema/        # Prompt templates
+│   │   │   ├── composer/      # Prompt composition
+│   │   │   └── dispatch/      # LLM routing
+│   │   ├── schemas/           # Zod validation
+│   │   └── utils/             # Logger, errors
+│   └── tests/                 # Vitest tests (63 passing)
+├── extensions/
+│   └── vscode/                # VS Code extension
+│       ├── src/
+│       │   ├── api/           # Backend client
+│       │   ├── panels/        # Review panel webview
+│       │   ├── recorder.ts    # Audio recording
+│       │   └── extension.ts   # Entry point
+│       └── tests/
+└── .specify/                  # Spec Kit templates & memory
 ```
 
-## Installation
-
-The project has been set up with:
-- **@specifyapp/cli** - Specify CLI for CI/CD workflows
-- **@specifyapp/sdk** - Specify SDK for programmatic access
-- **TypeScript** - For type-safe development
-- **dotenv** - For environment variable management
-
-## Getting Started
-
-### 1. Set Up Your Specify Account
-
-1. Create a Specify account at [specifyapp.com](https://specifyapp.com/)
-2. Create a repository in Specify for your design tokens
-3. Generate a Personal Access Token from [your user settings](https://specifyapp.com/user/personal-access-tokens)
-
-### 2. Configure Environment Variables
-
-1. Navigate to the `specify` directory
-2. Copy `.env.example` to `.env`:
-   ```bash
-   cd specify
-   cp .env.example .env
-   ```
-3. Add your Personal Access Token to `.env`:
-   ```
-   SPECIFY_PERSONAL_ACCESS_TOKEN=your-actual-token-here
-   ```
-
-### 3. Extract Design Tokens
-
-Run the extraction script:
+## 🧪 Testing
 
 ```bash
-cd specify
-npm run extract
+# Backend tests (63 passing)
+cd backend
+npm run test:run
+
+# Watch mode
+npm test
 ```
 
-This will authenticate with Specify and allow you to extract design tokens from your repositories.
+## 🎯 Intent Classification
 
-## Using Specify CLI
+ShepWhisper automatically classifies your intent:
 
-The Specify CLI is installed as a dev dependency. You can use it for:
+| Intent | Trigger Words | Schema |
+|--------|--------------|--------|
+| `bug_fix` | fix, broken, error, bug | Root cause + fix + prevention |
+| `add_feature` | add, create, build, implement | Goal + context + constraints |
+| `explain_code` | explain, what does, how does | Summary + breakdown + concepts |
+| `spec_generation` | spec, PRD, requirements | Overview + user stories + criteria |
 
-- **Automated token extraction** in CI/CD pipelines
-- **Command-line token management**
-- **Integration with build processes**
+## 🔒 Safety Principles
 
-Example CLI usage:
+From our [constitution](.specify/memory/constitution.md):
+
+1. **No invented APIs** - Never suggest functions that don't exist
+2. **Human approval required** - Nothing executes without your explicit "Send"
+3. **Explain assumptions** - AI must state what it assumes
+4. **User-friendly errors** - No stack traces, just helpful suggestions
+
+## 🛠️ Configuration
+
+### Extension Settings
+```json
+{
+  "shepwhisper.apiUrl": "http://localhost:3000",
+  "shepwhisper.defaultLlm": "cursor"
+}
+```
+
+### Environment Variables
 ```bash
-npx @specifyapp/cli pull --repository <repository-id>
+# backend/.env
+PORT=3000
+NODE_ENV=development
+OPENAI_API_KEY=sk-...
+DEBUG=shepwhisper:*
 ```
 
-## Using Specify SDK
+## 📈 Implementation Status
 
-The SDK provides programmatic access to your design tokens. Edit `specify/extract.ts` to customize your token extraction logic:
+- [x] **Phase 1-2**: Setup & Foundational ✅
+- [x] **Phase 3**: Voice Capture (US1) ✅
+- [x] **Phase 4**: Transformation Pipeline (US2) ✅
+- [x] **Phase 5**: Review Panel (US3) ✅
+- [x] **Phase 6**: LLM Dispatch (US4) ✅
+- [x] **Phase 7**: Error Handling (US5) ✅
+- [ ] **Phase 8**: Polish (rate limiting, auth, packaging)
 
-```typescript
-// List all repositories
-const repositories = await specifyClient.listRepositories();
+## 🤝 Built With
 
-// Get specific repository
-const repository = await specifyClient.getRepository("repository-id");
+- [Golden Sheep AI Methodology](.specify/memory/GSAIM%20-%20Copy) - Verification-first development
+- [OpenAI Whisper](https://openai.com/research/whisper) - Speech-to-text
+- [Express](https://expressjs.com/) + [Zod](https://zod.dev/) - Backend API
+- [VS Code Extension API](https://code.visualstudio.com/api) - IDE integration
 
-// Extract tokens
-const tokens = await repository.getTokens();
-```
+## 📄 License
 
-## Integration Options
+MIT © Golden Sheep AI
 
-### GitHub Integration
+---
 
-Specify can automatically sync design tokens to your GitHub repository via Pull Requests:
-
-1. Go to your Specify repository
-2. Navigate to "Destinations"
-3. Click "Create Pipeline"
-4. Select "GitHub application"
-5. Follow the setup wizard
-
-This creates a `.specifyrc.json` configuration file in your repository root.
-
-### CI/CD Integration
-
-The Specify CLI is built for CI/CD environments. You can:
-
-- Run token extraction in GitHub Actions
-- Automate token updates on design changes
-- Generate platform-specific token files (CSS, SCSS, JSON, etc.)
-
-## Official Documentation
-
-- [Specify Documentation](https://docs.specifyapp.com/)
-- [Specify CLI Usage](https://docs.specifyapp.com/guides/specify-cli-usage-101)
-- [Specify SDK Usage](https://docs.specifyapp.com/guides/specify-sdk-usage-101)
-- [GitHub Integration](https://docs.specifyapp.com/distribute/available-destinations/github)
-
-## Support
-
-- [Specify Discord](https://discord.gg/yRgTDgUp)
-- [Official Documentation](https://docs.specifyapp.com/)
-
-## License
-
-ISC
+*"ShepWhisper should make a normal human feel like a superhuman founder."*

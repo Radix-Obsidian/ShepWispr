@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>ShepWhispr - Recent Sessions</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ShepWhispr</h1>
+      <p class="subtitle">Press <kbd>Cmd+Shift+;</kbd> to record</p>
+    </header>
+
+    <section class="sessions" id="sessions">
+      <div class="empty-state">
+        <div class="icon">🐑</div>
+        <p>No sessions yet</p>
+        <p class="hint">Tap the hotkey, speak your intent, tap again</p>
+      </div>
+    </section>
+
+    <footer>
+      <p class="version">v0.1.0 Alpha</p>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
