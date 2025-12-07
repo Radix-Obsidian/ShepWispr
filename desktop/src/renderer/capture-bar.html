@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
   <title>Recording</title>
   <style>
     * {
@@ -20,13 +20,21 @@
       -webkit-app-region: drag;
     }
     .capture-bar {
-      background: rgba(0, 0, 0, 0.85);
-      border-radius: 30px;
-      padding: 12px 24px;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      min-width: 300px;
+      max-width: 500px;
+    }
+    .status-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     .pulse {
       width: 12px;
@@ -39,17 +47,36 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(1.2); }
     }
-    .text {
+    .status {
       color: white;
       font-size: 14px;
       font-weight: 500;
+    }
+    .transcript {
+      color: #aaa;
+      font-size: 16px;
+      text-align: center;
+      min-height: 24px;
+      max-height: 80px;
+      overflow-y: auto;
+      word-wrap: break-word;
+    }
+    .transcript.active {
+      color: #fff;
+    }
+    .hint {
+      color: #666;
+      font-size: 11px;
     }
   </style>
 </head>
 <body>
   <div class="capture-bar">
-    <div class="pulse"></div>
-    <span class="text">Recording...</span>
+    <div class="status-row">
+      <div class="pulse"></div>
+      <span class="status">Recording...</span>
+    </div>
+    <div class="hint">Press Ctrl+Shift+R again to stop</div>
   </div>
 </body>
 </html>

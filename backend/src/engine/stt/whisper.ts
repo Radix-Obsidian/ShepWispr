@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { TranscriptionError, AudioEmptyError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 
@@ -52,14 +52,15 @@ export async function transcribeAudio(audioBase64: string): Promise<Transcriptio
     // Detect format from buffer header (WAV starts with 'RIFF')
     const isWav = audioBuffer.slice(0, 4).toString() === 'RIFF';
     const fileName = isWav ? 'audio.wav' : 'audio.webm';
-    const mimeType = isWav ? 'audio/wav' : 'audio/webm';
-    
-    // Create a File-like object for the API
-    const audioFile = new File([audioBuffer], fileName, { type: mimeType });
 
     logger.debug('Sending audio to Whisper API', {
       sizeBytes: audioBuffer.length,
+      isWav,
+      fileName,
     });
+
+    // Use OpenAI's toFile helper for proper Node.js file handling
+    const audioFile = await toFile(audioBuffer, fileName);
 
     // Call Whisper API
     const transcription = await getOpenAIClient().audio.transcriptions.create({

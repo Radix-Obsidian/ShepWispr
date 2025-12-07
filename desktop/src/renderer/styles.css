@@ -159,6 +159,11 @@ header kbd {
   color: var(--text-primary);
 }
 
+.btn.success {
+  background: #4caf50 !important;
+  color: white !important;
+}
+
 footer {
   text-align: center;
   padding-top: 16px;

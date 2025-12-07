@@ -29,4 +29,15 @@ contextBridge.exposeInMainWorld('shepwhispr', {
   }
 });
 
+// Expose electronAPI for capture bar (Web Speech API)
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Send live transcript from Web Speech API to main process
+  sendTranscript: (transcript: string) => {
+    ipcRenderer.send('live-transcript', transcript);
+  },
+  
+  // Get final transcript when stopping
+  requestStop: () => ipcRenderer.invoke('request-stop')
+});
+
 console.log('ShepWhispr preload ready');

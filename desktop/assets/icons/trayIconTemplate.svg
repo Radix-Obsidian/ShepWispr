@@ -1,0 +1,8 @@
+
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple microphone icon -->
+  <rect x="6" y="2" width="4" height="8" rx="2" fill="black"/>
+  <path d="M 4 10 Q 4 13 8 13 Q 12 13 12 10" stroke="black" stroke-width="1" fill="none"/>
+  <line x1="8" y1="13" x2="8" y2="15" stroke="black" stroke-width="1"/>
+  <line x1="5" y1="15" x2="11" y2="15" stroke="black" stroke-width="1"/>
+</svg>

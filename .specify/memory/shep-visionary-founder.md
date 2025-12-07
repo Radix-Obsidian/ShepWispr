@@ -65,10 +65,7 @@ Magic + Safety + Empowerment.
 1. User speaks (push-to-talk).  
 2. ShepWhisper transcribes & interprets the intent.  
 3. Engine transforms → structured, safe, ready-to-run prompt.  
-4. VS Code panel shows:
-   - raw speech  
-   - structured prompt  
-   - “Send to LLM?” button  
+
 5. User approves → agent executes.
 
 This creates **precision**, **transparency**, and **trust**.

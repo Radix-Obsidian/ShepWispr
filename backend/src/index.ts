@@ -1,5 +1,8 @@
-import express from 'express';
+// Load environment variables FIRST (before any other imports that need them)
 import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { apiRouter } from './api/index.js';
@@ -8,9 +11,6 @@ import { logger } from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

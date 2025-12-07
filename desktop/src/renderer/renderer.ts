@@ -7,7 +7,7 @@
 // Session data structure
 interface Session {
   id: string;
-  timestamp: Date;
+  timestamp: string | Date;
   rawSpeech: string;
   structuredPrompt: string;
   intent: string;
@@ -23,8 +23,13 @@ const sessionsContainer = document.getElementById('sessions');
 function renderSession(session: Session): HTMLElement {
   const card = document.createElement('div');
   card.className = 'session-card';
+  
+  const timestamp = typeof session.timestamp === 'string' 
+    ? new Date(session.timestamp).toLocaleString()
+    : session.timestamp.toLocaleString();
+  
   card.innerHTML = `
-    <div class="timestamp">${session.timestamp.toLocaleString()}</div>
+    <div class="timestamp">${timestamp}</div>
     <span class="intent-badge">${session.intent}</span>
     <div class="raw-speech">"${session.rawSpeech}"</div>
     <div class="structured-prompt">${session.structuredPrompt}</div>
@@ -59,22 +64,74 @@ function renderSessions(sessions: Session[]): void {
   });
 }
 
+/**
+ * Load sessions from main process
+ */
+async function loadSessions(): Promise<void> {
+  try {
+    const sessions = await window.shepwhispr.getSessions();
+    renderSessions(sessions);
+  } catch (error) {
+    console.error('Failed to load sessions:', error);
+  }
+}
+
 // Handle button clicks
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
   const target = e.target as HTMLElement;
   const action = target.dataset.action;
   const id = target.dataset.id;
 
   if (action === 'paste' && id) {
-    console.log('Paste session:', id);
-    // TODO: Send to main process to paste
+    try {
+      await window.shepwhispr.pasteSession(id);
+      console.log('Session pasted:', id);
+      
+      // Show feedback
+      const originalText = target.textContent;
+      target.textContent = '✓ Copied to clipboard!';
+      target.classList.add('success');
+      setTimeout(() => {
+        target.textContent = originalText;
+        target.classList.remove('success');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to paste session:', error);
+      target.textContent = '✗ Failed';
+      setTimeout(() => {
+        target.textContent = 'Paste';
+      }, 2000);
+    }
   } else if (action === 'copy' && id) {
-    console.log('Copy session:', id);
-    // TODO: Send to main process to copy
+    try {
+      await window.shepwhispr.copySession(id);
+      console.log('Session copied:', id);
+      
+      // Show feedback
+      const originalText = target.textContent;
+      target.textContent = '✓ Copied!';
+      target.classList.add('success');
+      setTimeout(() => {
+        target.textContent = originalText;
+        target.classList.remove('success');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy session:', error);
+      target.textContent = '✗ Failed';
+      setTimeout(() => {
+        target.textContent = 'Copy';
+      }, 2000);
+    }
   }
 });
 
-// Initialize with empty state
-renderSessions([]);
+// Listen for new sessions
+window.shepwhispr.onNewSession((session: Session) => {
+  console.log('New session received:', session);
+  loadSessions();
+});
+
+// Initialize with sessions from main process
+loadSessions();
 
 console.log('ShepWhispr renderer ready');
